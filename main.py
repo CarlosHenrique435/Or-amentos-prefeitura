@@ -94,7 +94,7 @@ class OrcamentoApp:
 
 
         # Botão enviar
-        bot_enviar = tk.Button(root, text="Enviar Orçamento por Email", bg="#5ee27d", fg="white", font=("Arial", 12, "bold"), borderwidth=0, command=self.enviar_email)
+        bot_enviar = tk.Button(root, text="Enviar Orçamento por Email", bg="#159b34", fg="white", font=("Arial", 12, "bold"), borderwidth=0, command=self.enviar_email)
         bot_enviar.pack(pady=10)
         bot_enviar.bind("<Enter>", self.mudar_cursor)
         bot_enviar.bind("<Leave>", self.restaurar_cursor)
@@ -235,6 +235,7 @@ class OrcamentoApp:
             messagebox.showwarning("Erro", "Preencha todos os dados principais.")
             return
 
+        print(getcwd())
         nome_arquivo = f"{getcwd()}\\orcamento_{placa.replace('-', '')}.pdf"
         self.gerar_pdf(nome_arquivo)
 
@@ -246,7 +247,7 @@ class OrcamentoApp:
             if vals[0] == "" or vals[0] == "\\n":
                 linha = ""
             else:
-                linha = f"- {vals[0]} | Qtd: {vals[1]} | Unitário: R$ {vals[2]} | Desconto: R$ {vals[3]} | Total: R$ {vals[4]}"
+                linha = f"- {vals[0]} | Qtd: {vals[1]} | Unitário: R$ {vals[2]} | Desconto: R$ {vals[3]} | Total: R$ {vals[4]}\n"
                 corpo += linha + "\n"
 
         EMAIL_REMITENTE = "contatocentralautocenter@gmail.com"
@@ -268,6 +269,7 @@ class OrcamentoApp:
                 smtp.send_message(msg)
 
             messagebox.showinfo("Sucesso", "Orçamento enviado com sucesso!")
+            self.email_destino_var.set("")
 
         except Exception as e:
             messagebox.showerror("Erro", f"Falha ao enviar email:\n{e}")
