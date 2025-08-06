@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 from fpdf import FPDF
 import smtplib
 from email.message import EmailMessage
+import threading
+import math
 
 class OrcamentoApp:
     def __init__(self, root):
@@ -24,7 +26,7 @@ class OrcamentoApp:
         self.carro_var = tk.StringVar()
         self.placa_var = tk.StringVar()
         self.numero_var = tk.StringVar()
-        self.email_destino_var = tk.StringVar(value="contatocentralautocenter@gmail.com")
+        self.email_destino_var = tk.StringVar(value="compras@beneditonovo.sc.gov.br")
 
         form_frame = tk.LabelFrame(root, text="Informações do Orçamento", bg="#2e2e2e", fg="white", padx=10, pady=10)
         form_frame.pack(pady=10, fill="x", padx=10)
@@ -58,9 +60,9 @@ class OrcamentoApp:
 
 
 
-        self.valor_var = tk.StringVar()
-        self.desc_var = tk.StringVar()
-        self.desc_tipo_var = tk.StringVar(value="%")
+        self.valor_var = tk.StringVar(value="")  # valor padrão
+        self.desc_var = tk.StringVar(value="35,5")
+        self.desc_tipo_var = tk.StringVar(value="%")  # tipo de desconto padrão
 
         input_width = 18
 
@@ -113,8 +115,24 @@ class OrcamentoApp:
 
     def adicionar_item(self):
         peca = self.peca_var.get().strip()
+
+        if peca.lower() == "total":
+            total_geral = 0.0
+            for row in self.tree.get_children():
+                valores = self.tree.item(row)["values"]
+                if len(valores) >= 5:
+                    try:
+                        total_geral += float(str(valores[4]).replace(",", "."))
+                    except ValueError:
+                        continue
+            messagebox.showinfo("Total peças", f"Soma total: R$ {total_geral:.2f}")
+            self.tree.insert("", "end", values=("SOMA DAS PEÇAS", "-", "-", "-", f"R$ {total_geral:.2f}"), tags=("bold",))
+            self.tree.tag_configure("bold", background="#444", foreground="#0FA824", font=("Arial", 10, "bold"))
+            self.peca_var.set("")
+            return
+
         if peca == "" or peca == "\\n":
-    # Inserir linha em branco (todas as colunas vazias)
+            # Inserir linha em branco (todas as colunas vazias)
             self.tree.insert("", "end", values=("", "", "", "", ""))
             
             # Limpa os campos
@@ -159,8 +177,8 @@ class OrcamentoApp:
         self.peca_var.set("")
         self.qnt_var.set(0)
         self.valor_var.set("")
-        self.desc_var.set("")
-        self.desc_tipo_var.set("R$")
+        self.desc_var.set("35,5")
+        self.desc_tipo_var.set("%")
 
     def remover_item(self):
         selected_item = self.tree.selection()
@@ -218,13 +236,51 @@ class OrcamentoApp:
             messagebox.showerror("Erro", f"Não foi possível abrir o PDF:\n{e}")
 
 
+    def mostrar_loading(self, texto="Enviando email..."):
+        loading = tk.Toplevel(self.root)
+        loading.title("Aguarde")
+        loading_width = 320
+        loading_height = 180
+
+        # Centraliza na tela
+        screen_width = loading.winfo_screenwidth()
+        screen_height = loading.winfo_screenheight()
+        x = int((screen_width / 2) - (loading_width / 2))
+        y = int((screen_height / 2) - (loading_height / 2))
+        loading.geometry(f"{loading_width}x{loading_height}+{x}+{y}")
+
+        loading.configure(bg="#222")
+        loading.transient(self.root)
+        loading.grab_set()
+        loading.resizable(False, False)
+        loading.protocol("WM_DELETE_WINDOW", lambda: None)  # Desabilita fechar
+
+        tk.Label(loading, text=texto, font=("Arial", 14, "bold"), bg="#222", fg="#fff").pack(pady=(30,10))
+
+        canvas = tk.Canvas(loading, width=60, height=60, bg="#222", highlightthickness=0)
+        canvas.pack()
+        angle = [0]
+
+        def animate():
+            canvas.delete("all")
+            x, y, r = 30, 30, 25
+            for i in range(12):
+                a = math.radians(angle[0] + i*30)
+                x0 = x + r * math.cos(a)
+                y0 = y + r * math.sin(a)
+                color = "#159b34" if i == 0 else "#fff"
+                canvas.create_oval(x0-5, y0-5, x0+5, y0+5, fill=color, outline=color)
+            angle[0] = (angle[0] + 30) % 360
+            canvas.after(80, animate)
+        animate()
+        return loading
+
     def enviar_email(self):
         from os import getcwd
 
         confirmar = messagebox.askyesno("Confirmação", "Deseja realmente enviar o orçamento por e-mail?")
         if not confirmar:
             return
-
 
         carro = self.carro_var.get()
         placa = self.placa_var.get()
@@ -235,12 +291,10 @@ class OrcamentoApp:
             messagebox.showwarning("Erro", "Preencha todos os dados principais.")
             return
 
-        print(getcwd())
-        nome_arquivo = f"{getcwd()}\\orcamento_{placa.replace('-', '')}.pdf"
+        nome_arquivo = f"{getcwd()}\\orcamento_{placa.replace('-', '').replace(' ', '').replace('\n', '').strip()}.pdf"
         self.gerar_pdf(nome_arquivo)
 
         assunto = f"Orçamento do carro {carro} - Placa {placa} N°{numero}"
-
         corpo = f"""Boa tarde,\nSegue o orçamento do carro {carro} placa {placa} N° {numero}.\n\nItens do orçamento:\n\n"""
         for row in self.tree.get_children():
             vals = self.tree.item(row)["values"]
@@ -253,26 +307,32 @@ class OrcamentoApp:
         EMAIL_REMITENTE = "contatocentralautocenter@gmail.com"
         SENHA = "vhgm mwkb qljx buxq"
 
-        try:
-            msg = EmailMessage()
-            msg["Subject"] = assunto
-            msg["From"] = EMAIL_REMITENTE
-            msg["To"] = ", ".join([email.strip() for email in destino.split(";") if email.strip()])
-            msg.set_content(corpo)
+        loading = self.mostrar_loading("Enviando email...")
 
-            with open(nome_arquivo, "rb") as f:
-                file_data = f.read()
-                msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=nome_arquivo)
+        def tarefa_envio():
+            try:
+                msg = EmailMessage()
+                msg["Subject"] = assunto
+                msg["From"] = EMAIL_REMITENTE
+                msg["To"] = ", ".join([email.strip() for email in destino.split(";") if email.strip()])
+                msg.set_content(corpo)
 
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-                smtp.login(EMAIL_REMITENTE, SENHA)
-                smtp.send_message(msg)
+                with open(nome_arquivo, "rb") as f:
+                    file_data = f.read()
+                    msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=nome_arquivo)
 
-            messagebox.showinfo("Sucesso", "Orçamento enviado com sucesso!")
-            self.email_destino_var.set("")
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+                    smtp.login(EMAIL_REMITENTE, SENHA)
+                    smtp.send_message(msg)
 
-        except Exception as e:
-            messagebox.showerror("Erro", f"Falha ao enviar email:\n{e}")
+                loading.destroy()
+                messagebox.showinfo("Sucesso", "Orçamento enviado com sucesso!")
+                self.email_destino_var.set("")
+            except Exception as e:
+                loading.destroy()
+                messagebox.showerror("Erro", f"Falha ao enviar email:\n{e}")
+
+        threading.Thread(target=tarefa_envio, daemon=True).start()
 
 if __name__ == "__main__":
     root = tk.Tk()
