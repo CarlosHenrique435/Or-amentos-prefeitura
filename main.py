@@ -126,7 +126,7 @@ class OrcamentoApp:
                     except ValueError:
                         continue
             messagebox.showinfo("Total peças", f"Soma total: R$ {total_geral:.2f}")
-            self.tree.insert("", "end", values=("SOMA DAS PEÇAS", "-", "-", "-", f"R$ {total_geral:.2f}"), tags=("bold",))
+            self.tree.insert("", "end", values=("SOMA DAS PEÇAS", "-", "-", "-", f"R$ {total_geral:.2f}"), tags=("bold", "soma"))
             self.tree.tag_configure("bold", background="#444", foreground="#0FA824", font=("Arial", 10, "bold"))
             self.peca_var.set("")
             return
@@ -207,11 +207,20 @@ class OrcamentoApp:
         pdf.set_font("Arial", size=12)
         for row in self.tree.get_children():
             vals = self.tree.item(row)["values"]
-            pdf.cell(70, 10, str(vals[0]), 1)
-            pdf.cell(20, 10, str(vals[1]), 1, 0, "C")
-            pdf.cell(30, 10, str(vals[2]), 1, 0, "R")
-            pdf.cell(30, 10, str(vals[3]), 1, 0, "R")
-            pdf.cell(40, 10, str(vals[4]), 1, 1, "R")
+            # Checa se é a linha de soma
+            if vals[0] == "SOMA DAS PEÇAS":
+                pdf.set_fill_color(220, 220, 220)  # cinza claro
+                fill = True
+            elif vals[0].lower() == "mao de obra" or vals[0].lower() == "mão de obra":
+                pdf.set_fill_color(173, 216, 230)  # azul claro
+                fill = True
+            else:
+                fill = False
+            pdf.cell(70, 10, str(vals[0]), 1, 0, "L", fill)
+            pdf.cell(20, 10, str(vals[1]), 1, 0, "C", fill)
+            pdf.cell(30, 10, str(vals[2]), 1, 0, "R", fill)
+            pdf.cell(30, 10, str(vals[3]), 1, 0, "R", fill)
+            pdf.cell(40, 10, str(vals[4]), 1, 1, "R", fill)
 
         pdf.output(caminho)
 
@@ -249,15 +258,15 @@ class OrcamentoApp:
         y = int((screen_height / 2) - (loading_height / 2))
         loading.geometry(f"{loading_width}x{loading_height}+{x}+{y}")
 
-        loading.configure(bg="#222")
+        loading.configure(bg="#f73939")
         loading.transient(self.root)
         loading.grab_set()
         loading.resizable(False, False)
         loading.protocol("WM_DELETE_WINDOW", lambda: None)  # Desabilita fechar
 
-        tk.Label(loading, text=texto, font=("Arial", 14, "bold"), bg="#222", fg="#fff").pack(pady=(30,10))
+        tk.Label(loading, text=texto, font=("Arial", 14, "bold"), bg="#f73939", fg="#fff").pack(pady=(30,10))
 
-        canvas = tk.Canvas(loading, width=60, height=60, bg="#222", highlightthickness=0)
+        canvas = tk.Canvas(loading, width=60, height=60, bg="#f73939", highlightthickness=0)
         canvas.pack()
         angle = [0]
 
@@ -301,7 +310,10 @@ class OrcamentoApp:
             if vals[0] == "" or vals[0] == "\\n":
                 linha = ""
             else:
-                linha = f"- {vals[0]} | Qtd: {vals[1]} | Unitário: R$ {vals[2]} | Desconto: R$ {vals[3]} | Total: R$ {vals[4]}\n"
+                if vals[0] == "SOMA DAS PEÇAS":
+                    linha = f"\nTotal peças: R$ {vals[4]}\n\n"
+                else:
+                    linha = f"- {vals[0]} | Qtd: {vals[1]} | Unitário: R$ {vals[2]} | Desconto: R$ {vals[3]} | Total: R$ {vals[4]}\n"
                 corpo += linha + "\n"
 
         EMAIL_REMITENTE = "contatocentralautocenter@gmail.com"
