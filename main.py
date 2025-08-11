@@ -190,7 +190,11 @@ class OrcamentoApp:
     def gerar_pdf(self, caminho):
         pdf = FPDF()
         pdf.add_page()
+        # Adiciona a imagem no topo
+        pdf.image("midia/midia-logo.jpg", x=10, y=8, w=100)  # ajuste w conforme necessário
+
         pdf.set_font("Arial", "B", 14)
+        pdf.ln(25)  # Espaço após a imagem
         pdf.cell(0, 10, "Orçamento Auto Center", ln=True, align="C")
         pdf.set_font("Arial", size=12)
         pdf.ln(5)
