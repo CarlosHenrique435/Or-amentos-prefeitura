@@ -190,15 +190,36 @@ class OrcamentoApp:
     def gerar_pdf(self, caminho):
         pdf = FPDF()
         pdf.add_page()
-        # Adiciona a imagem no topo
-        pdf.image("midia/midia-logo.jpg", x=10, y=8, w=100)  # ajuste w conforme necessário
+        # --- Adiciona a imagem à esquerda ---
+        img_path = "midia/midia-logo.jpg"
+        img_width = 35
+        img_height = 35
+        margin_top = 8
+        margin_left = 10
+        pdf.image(img_path, x=margin_left, y=margin_top, w=img_width, h=img_height)
 
-        pdf.set_font("Arial", "B", 14)
-        pdf.ln(25)  # Espaço após a imagem
-        pdf.cell(0, 10, "Orçamento Auto Center", ln=True, align="C")
+        # --- Posiciona o texto ao lado da imagem ---
+        x_text = margin_left + img_width + 5
+        y_text = margin_top + 3
+        pdf.set_xy(x_text, y_text)
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(0, 8, "Orçamento Central Auto Center", ln=1)
+
+        pdf.set_x(x_text)
+        pdf.set_font("Arial", "", 12)
+        pdf.cell(0, 8, "CNPJ: 23.814.929/0001-50", ln=1)
+
+        pdf.set_x(x_text)
+        pdf.set_font("Arial", "", 11)
+        pdf.cell(0, 7, "WhatsApp: (41) 992910910", ln=1)
+
+        pdf.set_x(x_text)
+        pdf.set_font("Arial", "", 11)
+        pdf.cell(0, 7, "Email: contatocentralautocenter@gmail.com", ln=1)
+
+        pdf.ln(5)  # Espaço após o cabeçalho
+
         pdf.set_font("Arial", size=12)
-        pdf.ln(5)
-
         pdf.cell(0, 10, f"Carro: {self.carro_var.get()}   Placa: {self.placa_var.get()}   Nº: {self.numero_var.get()}", ln=True)
 
         pdf.set_font("Arial", "B", 12)
