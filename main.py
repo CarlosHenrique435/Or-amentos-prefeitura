@@ -171,7 +171,13 @@ class OrcamentoApp:
             messagebox.showwarning("Erro", "Preencha os campos corretamente.")
             return
 
-        self.tree.insert("", "end", values=(peca, qnt_display, f"{valor:.2f}", desconto_str, f"{total:.2f}"))
+        selected = self.tree.selection()
+        if selected:
+            # Insere logo após a linha selecionada
+            self.tree.insert("", self.tree.index(selected[0]) + 1, values=(peca, qnt_display, f"{valor:.2f}", desconto_str, f"{total:.2f}"))
+        else:
+            # Se nada selecionado, insere no final
+            self.tree.insert("", "end", values=(peca, qnt_display, f"{valor:.2f}", desconto_str, f"{total:.2f}"))
 
 
         self.peca_var.set("")
@@ -273,8 +279,8 @@ class OrcamentoApp:
     def mostrar_loading(self, texto="Enviando email..."):
         loading = tk.Toplevel(self.root)
         loading.title("Aguarde")
-        loading_width = 320
-        loading_height = 180
+        loading_width = 400
+        loading_height = 200
 
         # Centraliza na tela
         screen_width = loading.winfo_screenwidth()
@@ -283,30 +289,20 @@ class OrcamentoApp:
         y = int((screen_height / 2) - (loading_height / 2))
         loading.geometry(f"{loading_width}x{loading_height}+{x}+{y}")
 
-        loading.configure(bg="#f73939")
+        loading.configure(bg="#222")
         loading.transient(self.root)
         loading.grab_set()
         loading.resizable(False, False)
-        loading.protocol("WM_DELETE_WINDOW", lambda: None)  # Desabilita fechar
+        loading.protocol("WM_DELETE_WINDOW", lambda: None)
 
-        tk.Label(loading, text=texto, font=("Arial", 14, "bold"), bg="#f73939", fg="#fff").pack(pady=(30,10))
+        tk.Label(
+            loading,
+            text=texto,
+            font=("Arial", 16, "bold"),
+            bg="#222",
+            fg="#fff"
+        ).pack(expand=True, pady=40)
 
-        canvas = tk.Canvas(loading, width=60, height=60, bg="#f73939", highlightthickness=0)
-        canvas.pack()
-        angle = [0]
-
-        def animate():
-            canvas.delete("all")
-            x, y, r = 30, 30, 25
-            for i in range(12):
-                a = math.radians(angle[0] + i*30)
-                x0 = x + r * math.cos(a)
-                y0 = y + r * math.sin(a)
-                color = "#159b34" if i == 0 else "#fff"
-                canvas.create_oval(x0-5, y0-5, x0+5, y0+5, fill=color, outline=color)
-            angle[0] = (angle[0] + 30) % 360
-            canvas.after(80, animate)
-        animate()
         return loading
 
     def enviar_email(self):
