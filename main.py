@@ -10,7 +10,7 @@ class OrcamentoApp:
     def __init__(self, root):
         self.root = root
         root.title("Auto Center - Criar Orçamento")
-        root.geometry("1000x700")
+        root.geometry("1000x750")
         root.configure(bg="#2e2e2e")
 
         self.linhas = []
@@ -69,9 +69,9 @@ class OrcamentoApp:
         tk.Label(campos_frame, text="Peça/Serviço:", bg="#2e2e2e", fg="white").grid(row=0, column=0)
         tk.Entry(campos_frame, textvariable=self.peca_var, width=input_width, bg="#444", fg="white", insertbackground="white").grid(row=0, column=1, padx=5)
 
-        tk.Label(campos_frame, text="Quantidade:", bg="#2e2e2e", fg="white").grid(row=0, column=2)
+        tk.Label(campos_frame, text="Quantidade:", bg="#2e2e2e", fg="white").grid(row=0, column=2, sticky="e")
 
-        tk.Entry(campos_frame, textvariable=self.qnt_var, width=8, bg="#444", fg="white", insertbackground="white").grid(row=0, column=3, padx=1)
+        tk.Entry(campos_frame, textvariable=self.qnt_var, width=8, bg="#444", fg="white", insertbackground="white").grid(row=0, column=3, padx=5)
         tk.OptionMenu(campos_frame, self.qnt_unidade_var, "Un", "L", "H").grid(row=0, column=4, padx=2)
 
 
@@ -91,16 +91,33 @@ class OrcamentoApp:
         tk.Button(campos_frame, text="Remover Todos", command=self.remover_todos_itens,
          borderwidth=0, bg="#ff8c00", fg="white", font=("Arial", 10, "bold")).grid(row=1, column=2, padx=5)
 
-        tk.Button(campos_frame, text="Pré-visualizar PDF", command=self.visualizar_pdf, borderwidth=0, bg="#ff0000", fg="white", font=("Arial", 10, "bold")).grid(row=1, column=3, padx=5)
-
-
+        # Botão pré-visualizar PDF (adicione aqui, antes do botão de enviar)
+        bot_preview = tk.Button(
+            root,
+            text="Pré-visualizar PDF",
+            command=self.visualizar_pdf,
+            borderwidth=0,
+            bg="#ff0000",
+            fg="white",
+            font=("Arial", 12, "bold")
+        )
+        bot_preview.pack(pady=(10, 0))
 
         # Botão enviar
-        bot_enviar = tk.Button(root, text="Enviar Orçamento por Email", bg="#159b34", fg="white", font=("Arial", 12, "bold"), borderwidth=0, command=self.enviar_email)
+        bot_enviar = tk.Button(
+            root,
+            text="Enviar Orçamento por Email",
+            bg="#159b34",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            borderwidth=0,
+            command=self.enviar_email
+        )
         bot_enviar.pack(pady=10)
         bot_enviar.bind("<Enter>", self.mudar_cursor)
         bot_enviar.bind("<Leave>", self.restaurar_cursor)
-    
+        self.tree.bind("<Button-1>", self.toggle_tree_selection)
+ 
     def mudar_cursor(self, event):
         event.widget['cursor'] = 'hand2'
     
@@ -366,6 +383,11 @@ class OrcamentoApp:
                 messagebox.showerror("Erro", f"Falha ao enviar email:\n{e}")
 
         threading.Thread(target=tarefa_envio, daemon=True).start()
+
+    def toggle_tree_selection(self, event):
+        item = self.tree.identify_row(event.y)
+        if item and item in self.tree.selection():
+            self.tree.selection_remove(item)
 
 if __name__ == "__main__":
     root = tk.Tk()
