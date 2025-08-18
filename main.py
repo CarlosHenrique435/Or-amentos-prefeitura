@@ -10,6 +10,7 @@ class OrcamentoApp:
     def __init__(self, root):
         self.root = root
         root.title("Auto Center - Criar Orçamento")
+        root.iconbitmap("midia/midia-logo.ico")  # <-- Adicione esta linha
         root.geometry("1000x750")
         root.configure(bg="#2e2e2e")
 
