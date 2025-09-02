@@ -5,12 +5,16 @@ import smtplib
 from email.message import EmailMessage
 import threading
 import math
+import os
 
 class OrcamentoApp:
     def __init__(self, root):
         self.root = root
         root.title("Auto Center - Criar Orçamento")
-        root.iconbitmap("midia/midia-logo.ico")  # <-- Adicione esta linha
+        # Caminho absoluto para o ícone
+        icon_path = os.path.join(os.path.dirname(__file__), "midia", "midia-logo.ico")
+        if os.path.exists(icon_path):
+            root.iconbitmap(icon_path)
         root.geometry("1000x750")
         root.configure(bg="#2e2e2e")
 
@@ -91,6 +95,10 @@ class OrcamentoApp:
         #remover todos os itens
         tk.Button(campos_frame, text="Remover Todos", command=self.remover_todos_itens,
          borderwidth=0, bg="#ff8c00", fg="white", font=("Arial", 10, "bold")).grid(row=1, column=2, padx=5)
+
+        # Botão para lançar total no Excel
+        tk.Button(campos_frame, text="Lançar Total no Excel", command=self.lancar_total_excel,
+         borderwidth=0, bg="#6c63ff", fg="white", font=("Arial", 10, "bold")).grid(row=1, column=3, padx=5)
 
         # Botão pré-visualizar PDF (adicione aqui, antes do botão de enviar)
         bot_preview = tk.Button(
@@ -389,6 +397,36 @@ class OrcamentoApp:
         item = self.tree.identify_row(event.y)
         if item and item in self.tree.selection():
             self.tree.selection_remove(item)
+
+    def lancar_total_excel(self):
+        import os
+        from datetime import datetime
+        from openpyxl import Workbook, load_workbook
+
+        total = 0.0
+        for row in self.tree.get_children():
+            valores = self.tree.item(row)["values"]
+            if len(valores) >= 5 and valores[0] != "SOMA DAS PEÇAS" and valores[0] != "":
+                try:
+                    total += float(str(valores[4]).replace(",", "."))
+                except ValueError:
+                    continue
+
+        data_hoje = datetime.now().strftime("%d/%m/%Y")
+        arquivo_excel = "dados/lancamentos_totais.xlsx"
+
+        if os.path.exists(arquivo_excel):
+            wb = load_workbook(arquivo_excel)
+            ws = wb.active
+        else:
+            wb = Workbook()
+            ws = wb.active
+            ws.append(["Data", "Total (R$)"])
+
+        ws.append([data_hoje, total])
+        wb.save(arquivo_excel)
+        messagebox.showinfo("Lançamento Excel", f"Total de R$ {total:.2f} lançado na planilha '{arquivo_excel}'.")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
