@@ -153,7 +153,7 @@ class OrcamentoApp:
                         continue
             messagebox.showinfo("Total peças", f"Soma total: R$ {total_geral:.2f}")
             self.tree.insert("", "end", values=("SOMA DAS PEÇAS", "-", "-", "-", f"R$ {total_geral:.2f}"), tags=("bold", "soma"))
-            self.tree.tag_configure("bold", background="#444", foreground="#0FA824", font=("Arial", 10, "bold"))
+            self.tree.tag_configure("bold", background="#444", foreground="#A8260F", font=("Arial", 10, "bold"))
             self.peca_var.set("")
             return
 
@@ -166,7 +166,7 @@ class OrcamentoApp:
             self.qnt_var.set(0)
             self.valor_var.set("")
             self.desc_var.set("")
-            self.desc_tipo_var.set("R$")
+            self.desc_tipo_var.set("%")
             return
 
         try:
@@ -347,7 +347,7 @@ class OrcamentoApp:
             messagebox.showwarning("Erro", "Preencha todos os dados principais.")
             return
 
-        nome_arquivo = f"{getcwd()}\\orcamento_{placa.replace('-', '').replace(' ', '').replace('\n', '').strip()}.pdf"
+        nome_arquivo = f"{getcwd()}\\preview\\orcamento_{placa.replace('-', '').replace(' ', '').replace('\n', '').strip()}.pdf"
         self.gerar_pdf(nome_arquivo)
 
         assunto = f"Orçamento do carro {carro} - Placa {placa} N°{numero}"
