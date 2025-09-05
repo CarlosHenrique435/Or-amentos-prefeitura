@@ -153,7 +153,7 @@ class OrcamentoApp:
                         continue
             messagebox.showinfo("Total peças", f"Soma total: R$ {total_geral:.2f}")
             self.tree.insert("", "end", values=("SOMA DAS PEÇAS", "-", "-", "-", f"R$ {total_geral:.2f}"), tags=("bold", "soma"))
-            self.tree.tag_configure("bold", background="#444", foreground="#A8260F", font=("Arial", 10, "bold"))
+            self.tree.tag_configure("bold", background="#444", foreground="#129924", font=("Arial", 10, "bold"))
             self.peca_var.set("")
             return
 
@@ -220,6 +220,8 @@ class OrcamentoApp:
             messagebox.showwarning("Atenção", "Selecione um item para remover.")
 
     def gerar_pdf(self, caminho):
+        from datetime import datetime
+
         pdf = FPDF()
         pdf.add_page()
         # --- Adiciona a imagem à esquerda ---
@@ -248,6 +250,11 @@ class OrcamentoApp:
         pdf.set_x(x_text)
         pdf.set_font("Arial", "", 11)
         pdf.cell(0, 7, "Email: contatocentralautocenter@gmail.com", ln=1)
+
+        #data atual
+        pdf.set_x(x_text)
+        pdf.set_font("Arial", "", 11)
+        pdf.cell(0, 7, f"Data: {datetime.now().strftime('%d/%m/%Y')}", ln=1)
 
         pdf.ln(5)  # Espaço após o cabeçalho
 
