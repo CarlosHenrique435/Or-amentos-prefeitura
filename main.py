@@ -49,10 +49,18 @@ class OrcamentoApp:
         tk.Entry(form_frame, width=50, textvariable=self.email_destino_var, bg="#444", fg="white", insertbackground="white").grid(row=1, column=1, columnspan=5, pady=5)
 
         # Tabela
-        self.tree = ttk.Treeview(root, columns=("peca", "qnt", "valor", "desc", "total"), show='headings', height=18)
+        self.tree = ttk.Treeview(root, columns=("peca", "qnt", "valor", "desc", "valor_desc", "total"), show='headings', height=18)
+        colunas = {
+            "peca": "Peça/Serviço",
+            "qnt": "Qtd",
+            "valor": "Valor",
+            "desc": "Desconto",
+            "valor_desc": "Valor c/ Desc.",
+            "total": "Total"
+        }
         for col in self.tree["columns"]:
-            self.tree.heading(col, text=col.capitalize())
-            self.tree.column(col, anchor="center", width=150)
+            self.tree.heading(col, text=colunas[col])
+            self.tree.column(col, anchor="center", width=120)
         self.tree.pack(pady=10, padx=10, fill="x")
 
         campos_frame = tk.LabelFrame(root, text="Adicionar Item", bg="#2e2e2e", fg="white", padx=10, pady=10)
@@ -146,13 +154,13 @@ class OrcamentoApp:
             total_geral = 0.0
             for row in self.tree.get_children():
                 valores = self.tree.item(row)["values"]
-                if len(valores) >= 5:
+                if len(valores) >= 6:
                     try:
-                        total_geral += float(str(valores[4]).replace(",", "."))
+                        total_geral += float(str(valores[5]).replace(",", "."))
                     except ValueError:
                         continue
             messagebox.showinfo("Total peças", f"Soma total: R$ {total_geral:.2f}")
-            self.tree.insert("", "end", values=("SOMA DAS PEÇAS", "-", "-", "-", f"R$ {total_geral:.2f}"), tags=("bold", "soma"))
+            self.tree.insert("", "end", values=("SOMA DAS PEÇAS", "-", "-", "-", "-", f"R$ {total_geral:.2f}"), tags=("bold", "soma"))
             self.tree.tag_configure("bold", background="#444", foreground="#129924", font=("Arial", 10, "bold"))
             self.peca_var.set("")
             return
@@ -198,12 +206,17 @@ class OrcamentoApp:
             return
 
         selected = self.tree.selection()
+        valor_unitario_desc = (total / qnt) if qnt else 0
         if selected:
-            # Insere logo após a linha selecionada
-            self.tree.insert("", self.tree.index(selected[0]) + 1, values=(peca, qnt_display, f"{valor:.2f}", desconto_str, f"{total:.2f}"))
+            self.tree.insert(
+                "", self.tree.index(selected[0]) + 1,
+                values=(peca, qnt_display, f"{valor:.2f}", desconto_str, f"{valor_unitario_desc:.2f}", f"{total:.2f}")
+            )
         else:
-            # Se nada selecionado, insere no final
-            self.tree.insert("", "end", values=(peca, qnt_display, f"{valor:.2f}", desconto_str, f"{total:.2f}"))
+            self.tree.insert(
+                "", "end",
+                values=(peca, qnt_display, f"{valor:.2f}", desconto_str, f"{valor_unitario_desc:.2f}", f"{total:.2f}")
+            )
 
 
         self.peca_var.set("")
@@ -222,7 +235,7 @@ class OrcamentoApp:
     def gerar_pdf(self, caminho):
         from datetime import datetime
 
-        pdf = FPDF()
+        pdf = FPDF(orientation="P", unit="mm", format=(250, 297))  # largura 230mm (A4 tem 210mm)
         pdf.add_page()
         # --- Adiciona a imagem à esquerda ---
         img_path = "midia/midia-logo.jpg"
@@ -266,11 +279,15 @@ class OrcamentoApp:
         pdf.cell(20, 10, "Qtd", 1, 0, "C")
         pdf.cell(30, 10, "Valor", 1, 0, "C")
         pdf.cell(30, 10, "Desconto", 1, 0, "C")
+        pdf.cell(35, 10, "Valor c/ Desc.", 1, 0, "C")  # NOVA COLUNA
         pdf.cell(40, 10, "Total", 1, 1, "C")
 
         pdf.set_font("Arial", size=12)
         for row in self.tree.get_children():
             vals = self.tree.item(row)["values"]
+            # Garante que vals tenha 6 elementos
+            while len(vals) < 6:
+                vals.append("")
             # Checa se é a linha de soma
             if vals[0] == "SOMA DAS PEÇAS":
                 pdf.set_fill_color(220, 220, 220)  # cinza claro
@@ -284,7 +301,8 @@ class OrcamentoApp:
             pdf.cell(20, 10, str(vals[1]), 1, 0, "C", fill)
             pdf.cell(30, 10, str(vals[2]), 1, 0, "R", fill)
             pdf.cell(30, 10, str(vals[3]), 1, 0, "R", fill)
-            pdf.cell(40, 10, str(vals[4]), 1, 1, "R", fill)
+            pdf.cell(35, 10, str(vals[4]), 1, 0, "R", fill)
+            pdf.cell(40, 10, str(vals[5]), 1, 1, "R", fill)
 
         pdf.output(caminho)
 
