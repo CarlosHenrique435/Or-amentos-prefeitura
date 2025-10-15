@@ -383,9 +383,9 @@ class OrcamentoApp:
                 linha = ""
             else:
                 if vals[0] == "SOMA DAS PEÇAS":
-                    linha = f"\nTotal peças: R$ {vals[4]}\n\n"
+                    linha = f"\nTotal peças: R$ {vals[5]}\n\n"
                 else:
-                    linha = f"- {vals[0]} | Qtd: {vals[1]} | Unitário: R$ {vals[2]} | Desconto: R$ {vals[3]} | Total: R$ {vals[4]}\n"
+                    linha = f"- {vals[0]} | Qtd: {vals[1]} | Unitário: R$ {vals[2]} | Desconto: R$ {vals[3]} | Valor C/desconto: R$ {vals[4]} | Total: R$ {vals[5]}\n"
                 corpo += linha + "\n"
 
         EMAIL_REMITENTE = "contatocentralautocenter@gmail.com"
